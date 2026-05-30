@@ -33,10 +33,12 @@ var authLoginCmd = &cobra.Command{
 				"Set the variable and try again.")
 			return nil
 		}
+		phone, _ := cmd.Flags().GetString("phone")
 		svc := auth.NewService(auth.ServiceConfig{
 			SessionPath: config.SessionPath(),
 			APIID:       cfg.Telegram.APIID,
 			APIHash:     apiHash,
+			Phone:       phone,
 		})
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
@@ -101,6 +103,7 @@ var authLogoutCmd = &cobra.Command{
 }
 
 func init() {
+	authLoginCmd.Flags().String("phone", "", "Phone number (e.g. +5511999999999); skips interactive prompt")
 	authCmd.AddCommand(authLoginCmd, authStatusCmd, authLogoutCmd)
 	rootCmd.AddCommand(authCmd)
 }

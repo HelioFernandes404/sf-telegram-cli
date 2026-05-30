@@ -17,6 +17,7 @@ type ServiceConfig struct {
 	SessionPath string
 	APIID       int
 	APIHash     string
+	Phone       string // optional: pre-fill phone to skip interactive prompt
 }
 
 // Service manages authentication lifecycle.
@@ -78,7 +79,7 @@ func (s *Service) Login(ctx context.Context) error {
 		}
 
 		flow := tgauth.NewFlow(
-			&consoleAuthenticator{},
+			&consoleAuthenticator{phone: s.cfg.Phone},
 			tgauth.SendCodeOptions{},
 		)
 		return client.Auth().IfNecessary(ctx, flow)
