@@ -1,0 +1,42 @@
+version: 2
+
+project_name: tg-alerts
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - "-s -w -X github.com/heliofernandes404/tg-alerts/cmd.version={{.Version}} -X github.com/heliofernandes404/tg-alerts/cmd.commit={{.ShortCommit}} -X github.com/heliofernandes404/tg-alerts/cmd.buildDate={{.Date}}"
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files: []
+
+checksum:
+  name_template: sha256sums.txt
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^Merge"
+  groups:
+    - title: Features
+      regexp: "^feat"
+      order: 0
+    - title: Bug Fixes
+      regexp: "^fix"
+      order: 1
+    - title: Documentation
+      regexp: "^docs"
+      order: 2
+    - title: Other
+      order: 999

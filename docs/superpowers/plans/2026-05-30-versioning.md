@@ -202,7 +202,8 @@ builds:
       - "-s -w -X github.com/heliofernandes404/tg-alerts/cmd.version={{.Version}} -X github.com/heliofernandes404/tg-alerts/cmd.commit={{.ShortCommit}} -X github.com/heliofernandes404/tg-alerts/cmd.buildDate={{.Date}}"
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     files: []
 
