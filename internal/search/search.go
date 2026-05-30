@@ -182,6 +182,7 @@ func (e *Executor) Execute(ctx context.Context, req Request, channelName string)
 
 		resp = output.SearchResponse{
 			OK:         true,
+			Query:      buildQueryMeta(req, channelName),
 			Results:    results,
 			Pagination: pagination,
 		}
@@ -258,6 +259,38 @@ func fieldsToOutput(f parser.Fields) output.AlertFields {
 		Job:         f.Job,
 		Environment: f.Environment,
 		Namespace:   f.Namespace,
+	}
+}
+
+func buildQueryMeta(req Request, channelName string) output.QueryMeta {
+	optStr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+	var since string
+	if req.Since != nil {
+		since = req.Since.Format(time.RFC3339)
+	}
+	var untilPtr *string
+	if req.Until != nil {
+		s := req.Until.Format(time.RFC3339)
+		untilPtr = &s
+	}
+	return output.QueryMeta{
+		Channel: channelName,
+		Text:    req.Query,
+		Since:   since,
+		Until:   untilPtr,
+		Filters: output.FiltersMeta{
+			Host:      optStr(req.Host),
+			Instance:  optStr(req.Instance),
+			Alertname: optStr(req.Alertname),
+			Severity:  optStr(req.Severity),
+			Status:    optStr(req.Status),
+		},
+		Limit: req.Limit,
 	}
 }
 

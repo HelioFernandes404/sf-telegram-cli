@@ -3,39 +3,41 @@ package parser
 import "regexp"
 
 // Each pattern captures one named group "val" for the field value.
+// Patterns allow an arbitrary non-letter prefix so they match both plain labels
+// ("alertname: X") and bullet-point formats ("• alertname: X").
 var (
-	// "alertname: HighCPU", "Alert: HighCPU", "alert_name = HighCPU"
-	reAlertname = regexp.MustCompile(`(?im)^[ \t]*(?:alertname|alert_name|alert)\s*[:=]\s*(?P<val>\S+)`)
+	// "alertname: HighCPU", "• alertname: AP_Last_Contacted", "Alert: HighCPU"
+	reAlertname = regexp.MustCompile(`(?im)^[^a-zA-Z]*(?:alertname|alert_name|alert)\s*[:=]\s*(?P<val>\S+)`)
 
-	// "status: firing", "Status: RESOLVED"
-	reStatusLabel = regexp.MustCompile(`(?im)^[ \t]*status\s*[:=]\s*(?P<val>\S+)`)
+	// "status: firing", "• status: firing"
+	reStatusLabel = regexp.MustCompile(`(?im)^[^a-zA-Z]*status\s*[:=]\s*(?P<val>\S+)`)
 
 	// standalone keyword on its own line, optionally after emoji/punctuation: "🚨 FIRING"
 	reStatusKeyword = regexp.MustCompile(`(?m)^[^a-zA-Z0-9]*(?P<val>FIRING|RESOLVED)\s*$`)
 
-	// "severity = critical", "Severity: critical", severity="critical"
-	reSeverity = regexp.MustCompile(`(?im)^[ \t]*severity\s*[:=]["']?\s*(?P<val>critical|warning|info|page|none)["']?`)
+	// header lines from systemframe template:
+	//   "✅ Alerts Resolved ✅"  → resolved
+	//   "🔥 Critical Alerts 🔥" → firing
+	//   "⚠️ Warning Alerts ⚠️"  → firing
+	reStatusResolved = regexp.MustCompile(`(?im)Alerts?\s+Resolved`)
+	reStatusFiring   = regexp.MustCompile(`(?im)(?:Critical|Warning|Firing)\s+Alerts?|🔥`)
 
-	// "host: srv-01", "Host: srv-01"
-	reHost = regexp.MustCompile(`(?im)^[ \t]*host\s*[:=]\s*(?P<val>\S+)`)
+	// "severity = critical", "• severity: warning", severity="critical"
+	reSeverity = regexp.MustCompile(`(?im)^[^a-zA-Z]*severity\s*[:=]["']?\s*(?P<val>critical|warning|info|page|none)["']?`)
 
-	// "instance: srv-01:9100"
-	reInstance = regexp.MustCompile(`(?im)^[ \t]*instance\s*[:=]\s*(?P<val>\S+)`)
+	// "host: srv-01", "• host: F020-Tijuca-RJ"
+	reHost = regexp.MustCompile(`(?im)^[^a-zA-Z]*host\s*[:=]\s*(?P<val>\S+)`)
 
-	// "summary: ..." captures rest of line
-	reSummary = regexp.MustCompile(`(?im)^[ \t]*summary\s*[:=]\s*(?P<val>.+)$`)
+	// "instance: srv-01:9100", "• instance: systemframe-prod"
+	reInstance = regexp.MustCompile(`(?im)^[^a-zA-Z]*instance\s*[:=]\s*(?P<val>\S+)`)
 
-	// "description: ..."
-	reDescription = regexp.MustCompile(`(?im)^[ \t]*description\s*[:=]\s*(?P<val>.+)$`)
+	// summary / description capture rest of line
+	reSummary     = regexp.MustCompile(`(?im)^[^a-zA-Z]*summary\s*[:=]\s*(?P<val>.+)$`)
+	reDescription = regexp.MustCompile(`(?im)^[^a-zA-Z]*description\s*[:=]\s*(?P<val>.+)$`)
 
-	// "job: ..."
-	reJob = regexp.MustCompile(`(?im)^[ \t]*job\s*[:=]\s*(?P<val>\S+)`)
-
-	// "environment: ..."
-	reEnvironment = regexp.MustCompile(`(?im)^[ \t]*environment\s*[:=]\s*(?P<val>\S+)`)
-
-	// "namespace: ..."
-	reNamespace = regexp.MustCompile(`(?im)^[ \t]*namespace\s*[:=]\s*(?P<val>\S+)`)
+	reJob         = regexp.MustCompile(`(?im)^[^a-zA-Z]*job\s*[:=]\s*(?P<val>\S+)`)
+	reEnvironment = regexp.MustCompile(`(?im)^[^a-zA-Z]*environment\s*[:=]\s*(?P<val>\S+)`)
+	reNamespace   = regexp.MustCompile(`(?im)^[^a-zA-Z]*namespace\s*[:=]\s*(?P<val>\S+)`)
 )
 
 // namedMatch returns the value of the named group "val" from the first match, or "".

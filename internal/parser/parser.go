@@ -46,13 +46,19 @@ func Parse(text string) Result {
 	grab(&r.Fields.Summary, "summary_label", namedMatch(reSummary, text))
 	grab(&r.Fields.Description, "description_label", namedMatch(reDescription, text))
 
-	// status: try label first, then keyword; normalize to lowercase
+	// status: label > keyword > header inference
 	if raw := namedMatch(reStatusLabel, text); raw != "" {
 		r.Fields.Status = strings.ToLower(raw)
 		r.MatchedPatterns = append(r.MatchedPatterns, "status_keyword")
 	} else if raw := namedMatch(reStatusKeyword, text); raw != "" {
 		r.Fields.Status = strings.ToLower(raw)
 		r.MatchedPatterns = append(r.MatchedPatterns, "status_keyword")
+	} else if reStatusResolved.MatchString(text) {
+		r.Fields.Status = "resolved"
+		r.MatchedPatterns = append(r.MatchedPatterns, "status_header")
+	} else if reStatusFiring.MatchString(text) {
+		r.Fields.Status = "firing"
+		r.MatchedPatterns = append(r.MatchedPatterns, "status_header")
 	}
 
 	// severity: normalize to lowercase

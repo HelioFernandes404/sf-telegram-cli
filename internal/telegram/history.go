@@ -83,12 +83,19 @@ func Search(ctx context.Context, api *tg.Client, p SearchParams) ([]Message, err
 	return extractMessages(result), nil
 }
 
-// GetMessage fetches a single message by ID from a channel.
+// GetMessage fetches a single message by ID from a channel or group.
 func GetMessage(ctx context.Context, api *tg.Client, ch *ResolvedChannel, messageID int) (*Message, error) {
-	result, err := api.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
-		Channel: ch.InputChannel,
-		ID:      []tg.InputMessageClass{&tg.InputMessageID{ID: messageID}},
-	})
+	ids := []tg.InputMessageClass{&tg.InputMessageID{ID: messageID}}
+	var result tg.MessagesMessagesClass
+	var err error
+	if ch.InputChannel != nil {
+		result, err = api.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
+			Channel: ch.InputChannel,
+			ID:      ids,
+		})
+	} else {
+		result, err = api.MessagesGetMessages(ctx, ids)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("getMessages id=%d: %w", messageID, err)
 	}
