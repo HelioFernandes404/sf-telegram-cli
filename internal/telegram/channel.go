@@ -55,7 +55,7 @@ func resolveByUsername(ctx context.Context, api *tg.Client, username string) (*R
 					ChannelID:  c.ID,
 					AccessHash: c.AccessHash,
 				},
-				DisplayName: username,
+				DisplayName: "@" + username,
 			}, nil
 		}
 	}
@@ -83,6 +83,10 @@ func resolveByID(ctx context.Context, api *tg.Client, id int64) (*ResolvedChanne
 		switch c := chat.(type) {
 		case *tg.Channel:
 			if c.ID == absID {
+				name := c.Title
+				if c.Username != "" {
+					name = "@" + c.Username
+				}
 				return &ResolvedChannel{
 					InputPeer: &tg.InputPeerChannel{
 						ChannelID:  c.ID,
@@ -92,7 +96,7 @@ func resolveByID(ctx context.Context, api *tg.Client, id int64) (*ResolvedChanne
 						ChannelID:  c.ID,
 						AccessHash: c.AccessHash,
 					},
-					DisplayName: c.Username,
+					DisplayName: name,
 				}, nil
 			}
 		case *tg.Chat:

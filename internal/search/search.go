@@ -141,7 +141,7 @@ func (e *Executor) Execute(ctx context.Context, req Request, channelName string)
 			}
 			results = append(results, output.ResultItem{
 				Source:    "telegram",
-				Channel:   "@" + telegram.StripAt(channelName),
+				Channel:   ch.DisplayName,
 				MessageID: msg.ID,
 				Timestamp: msg.Timestamp.Format(time.RFC3339),
 				Text:      msg.Text,
@@ -182,7 +182,7 @@ func (e *Executor) Execute(ctx context.Context, req Request, channelName string)
 
 		resp = output.SearchResponse{
 			OK:         true,
-			Query:      buildQueryMeta(req, channelName),
+			Query:      buildQueryMeta(req, ch.DisplayName),
 			Results:    results,
 			Pagination: pagination,
 		}
@@ -216,7 +216,7 @@ func (e *Executor) ExecuteGetMessage(ctx context.Context, channelName string, me
 			OK: true,
 			Results: []output.ResultItem{{
 				Source:    "telegram",
-				Channel:   "@" + telegram.StripAt(channelName),
+				Channel:   ch.DisplayName,
 				MessageID: msg.ID,
 				Timestamp: msg.Timestamp.Format(time.RFC3339),
 				Text:      msg.Text,
