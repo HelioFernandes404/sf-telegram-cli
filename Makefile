@@ -1,5 +1,6 @@
 BINARY  := tg-alerts
 MODULE  := github.com/heliofernandes404/tg-alerts
+REPO    := HelioFernandes404/sf-telegram-cli
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -25,13 +26,16 @@ endif
 	git tag v$(VERSION_ARG)
 	git push origin v$(VERSION_ARG)
 
+INSTALL_DIR ?= $(HOME)/.local/bin
+
 install:
-	@ARCH=$$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'); \
-	URL=$$(curl -sf https://api.github.com/repos/heliofernandes404/tg-alerts/releases/latest \
+	@mkdir -p $(INSTALL_DIR); \
+	ARCH=$$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'); \
+	URL=$$(curl -sf https://api.github.com/repos/$(REPO)/releases/latest \
 	  | grep "browser_download_url" \
 	  | grep "linux_$${ARCH}.tar.gz" \
 	  | cut -d '"' -f 4); \
 	if [ -z "$$URL" ]; then echo "Error: no release found for linux/$$ARCH" >&2; exit 1; fi; \
 	echo "Downloading $$URL ..."; \
-	curl -fL "$$URL" | sudo tar -xz -C /usr/local/bin $(BINARY); \
-	echo "Installed $(BINARY) to /usr/local/bin"
+	curl -fL "$$URL" | tar -xz -C $(INSTALL_DIR) $(BINARY); \
+	echo "Installed $(BINARY) to $(INSTALL_DIR)"
