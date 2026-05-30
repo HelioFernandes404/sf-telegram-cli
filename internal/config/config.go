@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
@@ -26,9 +27,19 @@ type Config struct {
 	Defaults Defaults       `yaml:"defaults"`
 }
 
-// APIHash resolves the api_hash from the environment variable named in config.
+// APIHash resolves api_hash: env var first, then the local secrets file.
 func (c *Config) APIHash() string {
-	return os.Getenv(c.Telegram.APIHashEnv)
+	if c.Telegram.APIHashEnv != "" {
+		if v := os.Getenv(c.Telegram.APIHashEnv); v != "" {
+			return v
+		}
+	}
+	// Fall back to secrets file (mode 0600).
+	data, err := os.ReadFile(APIHashPath())
+	if err == nil {
+		return strings.TrimSpace(string(data))
+	}
+	return ""
 }
 
 // ConfigPath returns the platform-appropriate config file path.
@@ -39,6 +50,20 @@ func ConfigPath() string {
 // SessionPath returns the platform-appropriate session file path.
 func SessionPath() string {
 	return filepath.Join(xdg.DataHome, "tg-alerts", "session.json")
+}
+
+// APIHashPath returns the path to the local api_hash secrets file.
+func APIHashPath() string {
+	return filepath.Join(xdg.DataHome, "tg-alerts", "api_hash")
+}
+
+// SaveAPIHash writes the api_hash to the local secrets file with mode 0600.
+func SaveAPIHash(hash string) error {
+	path := APIHashPath()
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(strings.TrimSpace(hash)), 0600)
 }
 
 // LoadFrom reads and parses the config file at the given path.
