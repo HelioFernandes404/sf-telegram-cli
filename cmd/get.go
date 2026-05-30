@@ -51,10 +51,20 @@ func runGet(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	if cfg.Telegram.APIID == 0 {
+		output.WriteError(os.Stdout, "CONFIG_INVALID",
+			"telegram.api_id is not configured",
+			"Create ~/.config/tg-alerts/config.yaml with api_id and api_hash_env.")
+		return nil
+	}
 	apiHash := cfg.APIHash()
 	if apiHash == "" {
-		output.WriteError(os.Stdout, "CONFIG_INVALID",
-			fmt.Sprintf("env var %q not set", cfg.Telegram.APIHashEnv), "")
+		msg := "api_hash not configured"
+		if cfg.Telegram.APIHashEnv != "" {
+			msg = fmt.Sprintf("env var %q not set", cfg.Telegram.APIHashEnv)
+		}
+		output.WriteError(os.Stdout, "CONFIG_INVALID", msg,
+			"Create ~/.config/tg-alerts/config.yaml and set api_hash_env.")
 		return nil
 	}
 

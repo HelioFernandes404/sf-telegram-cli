@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func LoadFrom(path string) (*Config, error) {
 func Load() (*Config, error) {
 	path := ConfigPath()
 	cfg, err := LoadFrom(path)
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return &Config{}, nil
 	}
 	return cfg, err
