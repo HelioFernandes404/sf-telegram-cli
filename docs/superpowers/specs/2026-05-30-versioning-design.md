@@ -10,7 +10,7 @@ Add complete versioning to the `tg-alerts` CLI: binary version info via ldflags,
 
 ## 1. Binary Version Info
 
-New file `cmd/version.go` exposes a `version` subcommand and three package-level variables set to defaults:
+New file `internal/version/version.go` exposes version metadata with three package-level variables set to defaults:
 
 ```go
 var (
@@ -23,15 +23,15 @@ var (
 At build time, goreleaser and `make build` override these via ldflags:
 
 ```
--X github.com/heliofernandes404/tg-alerts/cmd.version={{.Version}}
--X github.com/heliofernandes404/tg-alerts/cmd.commit={{.Commit}}
--X github.com/heliofernandes404/tg-alerts/cmd.buildDate={{.Date}}
+-X github.com/heliofernandes404/tg-alerts/internal/version.Version={{.Version}}
+-X github.com/heliofernandes404/tg-alerts/internal/version.Commit={{.Commit}}
+-X github.com/heliofernandes404/tg-alerts/internal/version.Date={{.Date}}
 ```
 
-Output of `tg-alerts version`:
+Output of `tg-alerts --version`:
 
 ```
-v1.2.3 (commit: abc1234, built: 2026-05-30)
+{"version":"v1.2.3","commit":"abc1234","date":"2026-05-30T00:00:00Z"}
 ```
 
 ## 2. Makefile
@@ -82,8 +82,8 @@ New project-level `CLAUDE.md` documenting:
 
 | File | Action |
 |------|--------|
-| `cmd/version.go` | New — version subcommand + ldflags vars |
-| `cmd/root.go` | Modified — register version subcommand |
+| `internal/version/version.go` | New — version metadata + ldflags vars |
+| `cmd/root.go` | Modified — register JSON `--version` output |
 | `Makefile` | New |
 | `.goreleaser.yaml` | New |
 | `.github/workflows/release.yml` | New |

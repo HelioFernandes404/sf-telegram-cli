@@ -4,7 +4,7 @@
 
 **Goal:** Add full versioning to tg-alerts CLI: binary version info via ldflags, Makefile, goreleaser multi-arch builds, GitHub Actions release pipeline, and CLAUDE.md.
 
-**Architecture:** `cmd/version.go` holds ldflags-injected variables and registers the `version` subcommand via cobra's `init()` pattern. A `Makefile` drives local dev and tag-based releases. `.goreleaser.yaml` defines the build matrix and GitHub Release publishing. GitHub Actions triggers goreleaser on every `v*` tag push.
+**Architecture:** `internal/version` holds ldflags-injected variables and `cmd/root.go` exposes them through Cobra's `--version` flag. A `Makefile` drives local dev and tag-based releases. `.goreleaser.yaml` defines the build matrix and GitHub Release publishing. GitHub Actions triggers goreleaser on every `v*` tag push.
 
 **Tech Stack:** Go 1.26.3, cobra, goreleaser v2, GitHub Actions
 
@@ -14,8 +14,8 @@
 
 | File | Action | Responsibility |
 |------|--------|---------------|
-| `cmd/version.go` | Create | ldflags vars + `version` subcommand |
-| `cmd/version_test.go` | Create | verify subcommand output |
+| `internal/version/version.go` | Create | ldflags vars |
+| `cmd/version_test.go` | Create | verify `--version` JSON output |
 | `Makefile` | Create | build/release/install/clean targets |
 | `.goreleaser.yaml` | Create | linux/amd64+arm64 builds + GitHub Release |
 | `.github/workflows/release.yml` | Create | CI: trigger goreleaser on `v*` tags |
@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: Binary version subcommand
+### Task 1: Binary `--version` output
 
 **Files:**
 - Create: `cmd/version.go`
@@ -49,7 +49,7 @@ func TestVersionCommand(t *testing.T) {
 		t.Fatalf("version command failed: %v", err)
 	}
 	got := buf.String()
-	if !strings.Contains(got, "commit:") || !strings.Contains(got, "built:") {
+	if !strings.Contains(got, "version") || !strings.Contains(got, "commit") || !strings.Contains(got, "date") {
 		t.Errorf("unexpected output: %q", got)
 	}
 }
@@ -69,11 +69,7 @@ Expected: FAIL — `version` command not found or output doesn't match.
 ```go
 package cmd
 
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
+import "encoding/json"
 
 var (
 	version   = "dev"
@@ -81,17 +77,12 @@ var (
 	buildDate = "unknown"
 )
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print version information",
-	Run: func(c *cobra.Command, args []string) {
-		fmt.Fprintf(c.OutOrStdout(), "%s (commit: %s, built: %s)\n", version, commit, buildDate)
-	},
+func init() {
+	rootCmd.Version = version
+	rootCmd.SetVersionTemplate(versionJSON())
 }
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
+func versionJSON() string { /* returns JSON for --version */ }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -106,7 +97,7 @@ Expected: PASS
 
 ```bash
 git add cmd/version.go cmd/version_test.go
-git commit -m "feat: add version subcommand with ldflags injection"
+git commit -m "feat: add json version flag with ldflags injection"
 ```
 
 ---
@@ -127,9 +118,9 @@ COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 DATE    := $(shell date -u +%Y-%m-%d)
 
 LDFLAGS := -s -w \
-	-X $(MODULE)/cmd.version=$(VERSION) \
-	-X $(MODULE)/cmd.commit=$(COMMIT) \
-	-X $(MODULE)/cmd.buildDate=$(DATE)
+	-X $(MODULE)/internal/version.Version=$(VERSION) \
+	-X $(MODULE)/internal/version.Commit=$(COMMIT) \
+	-X $(MODULE)/internal/version.Date=$(DATE)
 
 .PHONY: build clean release install
 
@@ -164,10 +155,10 @@ install:
 
 ```bash
 make build
-./tg-alerts version
+./tg-alerts --version
 ```
 
-Expected output contains `dev (commit:` (since no tag yet).
+Expected output is JSON with `version`, `commit`, and `date` keys populated.
 
 - [ ] **Step 3: Commit**
 
@@ -199,7 +190,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - "-s -w -X github.com/heliofernandes404/tg-alerts/cmd.version={{.Version}} -X github.com/heliofernandes404/tg-alerts/cmd.commit={{.ShortCommit}} -X github.com/heliofernandes404/tg-alerts/cmd.buildDate={{.Date}}"
+      - "-s -w -X github.com/heliofernandes404/tg-alerts/internal/version.Version={{.Version}} -X github.com/heliofernandes404/tg-alerts/internal/version.Commit={{.ShortCommit}} -X github.com/heliofernandes404/tg-alerts/internal/version.Date={{.Date}}"
 
 archives:
   - formats:
@@ -324,7 +315,7 @@ Read-only Go CLI for querying Telegram alert channels. Returns JSON for LLMs and
 ## Project Structure
 
 ```
-cmd/          cobra subcommands (auth, search, get, version)
+cmd/          cobra subcommands (auth, search, get)
 internal/
   auth/       Telegram session management
   config/     YAML config + env var resolution
@@ -392,10 +383,10 @@ Expected: all pass.
 
 ```bash
 make build
-./tg-alerts version
+./tg-alerts --version
 ```
 
-Expected: `dev (commit: <short-hash>, built: <date>)`
+Expected: JSON with `version`, `commit`, and `date`.
 
 - [ ] **Step 3: List all subcommands**
 

@@ -9,7 +9,7 @@ Read-only Go CLI for querying Telegram alert channels. Returns JSON for LLMs and
 ## Project Structure
 
 ```
-cmd/          cobra subcommands (auth, search, get, version)
+cmd/          cobra subcommands (auth, search, get)
 internal/
   auth/       Telegram session management
   config/     YAML config + env var resolution
@@ -32,6 +32,10 @@ These drive the auto-generated CHANGELOG in releases.
 
 ## Release Workflow
 
+`tg-alerts --version` must return JSON with `version`, `commit`, and `date` from `internal/version`.
+
+The version is injected with `git describe --tags --always --dirty` and Go `ldflags` into `internal/version`.
+
 1. Merge all changes to `main`
 2. Run: `make release VERSION_ARG=x.y.z`
    - Creates tag `vx.y.z` and pushes to origin
@@ -50,5 +54,6 @@ Downloads the latest GitHub Release binary for the current arch to `/usr/local/b
 
 ```bash
 make build        # builds ./tg-alerts with version from git describe
+./tg-alerts --version
 make clean        # removes ./tg-alerts
 ```
